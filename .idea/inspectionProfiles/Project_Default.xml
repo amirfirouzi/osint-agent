@@ -1,0 +1,60 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="DuplicatedCode" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <Languages>
+        <language minSize="727" name="Python" />
+      </Languages>
+    </inspection_tool>
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="attrs" />
+          <option value="bleach" />
+          <option value="certifi" />
+          <option value="charset-normalizer" />
+          <option value="fastjsonschema" />
+          <option value="idna" />
+          <option value="jsonschema" />
+          <option value="jsonschema-specifications" />
+          <option value="jupyter_core" />
+          <option value="jupytext" />
+          <option value="kafka-python-ng" />
+          <option value="kaggle" />
+          <option value="kagglesdk" />
+          <option value="markdown-it-py" />
+          <option value="mdit-py-plugins" />
+          <option value="mdurl" />
+          <option value="nbformat" />
+          <option value="numpy" />
+          <option value="packaging" />
+          <option value="pandas" />
+          <option value="platformdirs" />
+          <option value="protobuf" />
+          <option value="python-dateutil" />
+          <option value="python-dotenv" />
+          <option value="python-slugify" />
+          <option value="pytz" />
+          <option value="PyYAML" />
+          <option value="referencing" />
+          <option value="requests" />
+          <option value="rpds-py" />
+          <option value="six" />
+          <option value="text-unidecode" />
+          <option value="tqdm" />
+          <option value="traitlets" />
+          <option value="tzdata" />
+          <option value="urllib3" />
+          <option value="webencodings" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8NamingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="N802" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
