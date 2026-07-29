@@ -1,6 +1,6 @@
 # test_hn_mcp.py
 import sys
-sys.path.insert(0, ".")
+sys.path.insert(0, "tests")
 
 from mcp_servers.hackernews_mcp.server import search_hackernews, get_hackernews_top_stories
 

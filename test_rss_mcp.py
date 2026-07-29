@@ -1,6 +1,6 @@
 # test_rss_mcp.py
 import sys
-sys.path.insert(0, ".")
+sys.path.insert(0, "tests")
 
 from mcp_servers.rss_mcp.server import (
     search_security_feeds,

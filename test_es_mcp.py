@@ -1,6 +1,6 @@
 # test_es_mcp.py
 import sys
-sys.path.insert(0, ".")
+sys.path.insert(0, "tests")
 
 from mcp_servers.elasticsearch_mcp.server import (
     search_threat_indicators,
