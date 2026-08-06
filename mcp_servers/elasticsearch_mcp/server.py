@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 from elasticsearch import Elasticsearch
 from fastmcp import FastMCP
+import logging
+logging.getLogger("fastmcp").setLevel(logging.ERROR)
 import os
 os.environ["FASTMCP_LOG_LEVEL"] = "ERROR"
 

@@ -8,6 +8,8 @@ API docs: https://hn.algolia.com/api
 import httpx
 from datetime import datetime, timezone, timedelta
 from fastmcp import FastMCP
+import logging
+logging.getLogger("fastmcp").setLevel(logging.ERROR)
 import os
 os.environ["FASTMCP_LOG_LEVEL"] = "ERROR"
 
