@@ -8,10 +8,40 @@ so the concepts transfer directly instead of being a generic toy demo.
 - `docker-compose.yml` — ES 8.15 + Kibana, security disabled for local dev
 - `corpus.py` — 20 synthetic threat-intel/social-media style posts, deliberately
   designed with paraphrase pairs and an exact-term-only pair (see comments in the file)
-- `setup_and_ingest.py` — creates the index (`text` + `dense_vector` fields), embeds
-  the corpus locally with `sentence-transformers/all-MiniLM-L6-v2`, bulk-indexes
-- `search_demo.py` — runs BM25, dense kNN, and RRF hybrid search side by side on
-  the same query
+- `embedder.py` — swappable embedding backend: local (`sentence-transformers`, free)
+  or Voyage AI (Anthropic's recommended embedding partner — **Anthropic doesn't build
+  its own embedding model**, Claude does text generation, embeddings are a different
+  training objective, so they point to Voyage instead)
+- `setup_and_ingest.py` — creates the index (`text` + `dense_vector`, dimension
+  auto-detected from the embedder), embeds the corpus, bulk-indexes
+- `search_demo.py` — runs BM25, dense kNN, RRF hybrid, and cross-encoder reranking
+  side by side on the same query
+- `rerank.py` — cross-encoder reranking stage (bi-encoder retrieval + cross-encoder
+  rerank on a small candidate set — the same two-stage pattern your production
+  system uses)
+- `eval.py` — a tiny hand-labeled eval set + Hit Rate@K scoring across all four
+  methods, a first taste of formal eval methodology on a corpus small enough to
+  reason about by hand
+
+## Switching embedding backend
+
+Edit `embedder.py`:
+
+```python
+BACKEND = "local"   # free, no API key, runs on your machine
+# or
+BACKEND = "voyage"  # needs VOYAGE_API_KEY env var, Anthropic-recommended, paid API
+```
+
+For Voyage:
+```bash
+export VOYAGE_API_KEY="your-key-here"
+```
+Get a key at https://dashboard.voyageai.com — they have a free tier for experimentation.
+
+Note: dimension is auto-detected, so switching backends and re-running
+`setup_and_ingest.py` just works — it rebuilds the index at whatever dimension
+the new backend produces (MiniLM: 384, Voyage voyage-3-large: 1024).
 
 ## Setup
 
@@ -76,22 +106,42 @@ payment"` — should hit both `doc_06`/`doc_07` (ransomware) and maybe pull in u
 docs). Look at the RRF hybrid scores and think about whether the RRF_K constant (currently 60,
 the standard default) is doing what you'd want, or whether you'd tune it for your use case.
 
+## Reranking and eval (now built in)
+
+```bash
+# See BM25 / dense / RRF / cross-encoder-reranked side by side on one query:
+python search_demo.py "bots coordinating to push the same message"
+
+# Score all four methods against a hand-labeled eval set (Hit Rate @ K):
+python eval.py
+```
+
+Things to actually look at, not just run:
+- **In `search_demo.py` output**, compare the RRF ranking to the reranked ranking on
+  the same query. Where do they disagree? The cross-encoder saw the query and each
+  document *together*; RRF only ever compared independently-computed vectors. Form an
+  opinion on whether the reorder is actually better before reading anything else — that
+  judgment call is what you're being hired to make.
+- **In `eval.py` output**, look at which specific queries each method fails on, not
+  just the aggregate hit-rate. A 100% hit-rate on 6 queries proves nothing statistically
+  — the value here is the *habit* of writing expectations down before looking at
+  results, and the vocabulary (Hit Rate@K) for talking about retrieval quality precisely
+  instead of "it seems to work."
+
 ## Where to go next (once this feels solid)
 
-1. **Swap the embedding model** — try `BAAI/bge-small-en-v1.5` instead of MiniLM (just
-   change `MODEL_NAME` in both scripts, dimension is different so re-run setup) and see
-   if the paraphrase/coded-language cases rank differently. This gives you a real, felt
-   sense of "embedding model quality" instead of an abstract idea.
-2. **Add a reranker** — this is the natural next step given your production system
-   already has one. Take the top ~10 RRF results and rerank them with a cross-encoder
-   (`sentence-transformers` also ships `cross-encoder/ms-marco-MiniLM-L-6-v2`) and compare
-   the reordering against plain RRF. This is the exact mechanism worth being able to
-   explain in an interview: bi-encoder retrieval (fast, approximate) + cross-encoder
-   rerank (slow, precise, only on a small candidate set).
-3. **Look at it in Kibana** — open `http://localhost:5601`, create a data view on
+1. **Swap the embedding backend and re-run everything** — flip `embedder.py` to
+   `BACKEND = "voyage"` (or try `BAAI/bge-small-en-v1.5` locally) and re-run
+   `setup_and_ingest.py` then `eval.py`. Compare the Hit Rate@K numbers directly —
+   this turns "embedding model quality" from an abstract idea into a number you
+   produced yourself.
+2. **Look at it in Kibana** — open `http://localhost:5601`, create a data view on
    `embed_demo`, and browse the indexed docs. Not analytically necessary for this
    exercise, but worth doing once since you'll want Kibana fluency regardless.
-4. **Build a tiny eval set** — write down 5-10 (query, expected doc_id) pairs from this
-   corpus yourself, then score BM25 vs dense vs RRF with simple hit-rate@k. This is a
-   first, small taste of the "formal eval methodology" gap flagged in your roadmap —
-   doing it on a toy corpus first, before your real production data, is the right order.
+3. **Grow the eval set** — add 10-15 more (query, expected doc_id) pairs, including
+   some deliberately adversarial ones (queries with expected-empty results, or
+   multi-topic queries with more than one right answer) to stress-test the metric
+   itself, not just the retrieval.
+4. **Try it against your real ShadowPulse-style data** — once this feels solid on the
+   toy corpus, the real test is whether the same four-method comparison and eval habit
+   transfers cleanly to your actual production content patterns.

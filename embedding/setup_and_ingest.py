@@ -1,27 +1,20 @@
 """
-Step 1: create the index (text field + dense_vector field)
-Step 2: embed the corpus locally with sentence-transformers
+Step 1: embed the corpus (local model or Voyage AI, see embedder.py)
+Step 2: create the index with a dense_vector field sized to match
 Step 3: bulk-index into Elasticsearch
 
 Run: python setup_and_ingest.py
 """
 
 from elasticsearch import Elasticsearch, helpers
-from sentence_transformers import SentenceTransformer
 from corpus import DOCS
+from embedder import Embedder
 
 INDEX_NAME = "embed_demo"
 ES_URL = "http://localhost:9200"
 
-# all-MiniLM-L6-v2: small (80MB), fast on CPU, 384 dimensions.
-# Good first model -- not state of the art, but you can FEEL the concepts
-# without waiting on GPU inference. Swap this for bge-small/e5-small later
-# to compare quality if you want a second data point.
-MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
-EMBED_DIM = 384
 
-
-def build_index(es: Elasticsearch):
+def build_index(es: Elasticsearch, dim: int):
     if es.indices.exists(index=INDEX_NAME):
         print(f"Deleting existing index '{INDEX_NAME}'...")
         es.indices.delete(index=INDEX_NAME)
@@ -29,30 +22,30 @@ def build_index(es: Elasticsearch):
     mapping = {
         "mappings": {
             "properties": {
-                "text": {"type": "text"},  # BM25 (sparse/lexical) search runs on this
+                "text": {"type": "text"},
                 "embedding": {
                     "type": "dense_vector",
-                    "dims": EMBED_DIM,
+                    "dims": dim,
                     "index": True,
-                    "similarity": "cosine",  # matches how MiniLM was trained/normalized
+                    "similarity": "cosine",
                 },
             }
         }
     }
     es.indices.create(index=INDEX_NAME, body=mapping)
-    print(f"Created index '{INDEX_NAME}' with a {EMBED_DIM}-dim cosine dense_vector field.")
+    print(f"Created index '{INDEX_NAME}' with a {dim}-dim cosine dense_vector field.")
 
 
-def embed_and_index(es: Elasticsearch, model: SentenceTransformer):
+def embed_and_index(es: Elasticsearch, embedder: Embedder):
     texts = [d["text"] for d in DOCS]
-    print(f"Embedding {len(texts)} documents with {MODEL_NAME}...")
-    vectors = model.encode(texts, normalize_embeddings=True)  # normalize -> cosine == dot product
+    print(f"Embedding {len(texts)} documents with backend='{embedder.backend}' model='{embedder.model_name}'...")
+    vectors = embedder.embed(texts, input_type="document")
 
     actions = [
         {
             "_index": INDEX_NAME,
             "_id": doc["id"],
-            "_source": {"text": doc["text"], "embedding": vec.tolist()},
+            "_source": {"text": doc["text"], "embedding": vec},
         }
         for doc, vec in zip(DOCS, vectors)
     ]
@@ -65,9 +58,9 @@ if __name__ == "__main__":
     es = Elasticsearch(ES_URL)
     assert es.ping(), f"Could not reach Elasticsearch at {ES_URL} -- is Docker running?"
 
-    model = SentenceTransformer(MODEL_NAME)
+    embedder = Embedder()  # backend set in embedder.py
 
-    build_index(es)
-    embed_and_index(es, model)
+    build_index(es, embedder.dim)
+    embed_and_index(es, embedder)
 
     print("\nDone. Now run: python search_demo.py \"your query here\"")
