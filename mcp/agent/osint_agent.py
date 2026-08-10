@@ -1,12 +1,11 @@
 # agent/osint_agent.py
 
-import asyncio
 import os
 from dotenv import load_dotenv
 from langchain_anthropic import ChatAnthropic
 from langgraph.prebuilt import create_react_agent
-from agent.mcp_clients import get_mcp_client
-from agent.prompts import SYSTEM_PROMPT
+from mcp.agent.mcp_clients import get_mcp_client
+from mcp.agent.prompts import SYSTEM_PROMPT
 
 load_dotenv()
 

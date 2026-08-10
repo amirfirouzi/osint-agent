@@ -2,7 +2,7 @@
 import sys
 sys.path.insert(0, "tests")
 
-from mcp_servers.rss_mcp.server import (
+from mcp.mcp_servers.rss_mcp.server import (
     search_security_feeds,
     get_latest_from_feed,
     list_available_feeds

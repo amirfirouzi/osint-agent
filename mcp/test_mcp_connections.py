@@ -1,9 +1,7 @@
 # test_mcp_connections.py
 
 import asyncio
-import json
-import sys
-from agent.mcp_clients import get_mcp_client
+from mcp.agent.mcp_clients import get_mcp_client
 
 
 async def test_connections():

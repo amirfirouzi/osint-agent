@@ -2,7 +2,7 @@
 import sys
 sys.path.insert(0, "tests")
 
-from mcp_servers.elasticsearch_mcp.server import (
+from mcp.mcp_servers.elasticsearch_mcp.server import (
     search_threat_indicators,
     get_knowledge_base_stats,
     get_related_indicators

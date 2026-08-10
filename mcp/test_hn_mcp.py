@@ -2,7 +2,7 @@
 import sys
 sys.path.insert(0, "tests")
 
-from mcp_servers.hackernews_mcp.server import search_hackernews, get_hackernews_top_stories
+from mcp.mcp_servers.hackernews_mcp.server import search_hackernews, get_hackernews_top_stories
 
 print("=== Searching HN for 'openssl' ===")
 result = search_hackernews(query="anthropic vulnerability", hours_ago=720, limit=3)

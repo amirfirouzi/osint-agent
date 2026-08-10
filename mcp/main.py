@@ -2,7 +2,7 @@
 
 import asyncio
 import sys
-from agent.osint_agent import run_investigation
+from mcp.agent.osint_agent import run_investigation
 
 
 EXAMPLE_QUERIES = [
