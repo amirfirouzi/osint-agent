@@ -1,0 +1,26 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: rag-pg
+    environment:
+      POSTGRES_USER: rag
+      POSTGRES_PASSWORD: rag
+      POSTGRES_DB: rag
+    ports:
+      - "5433:5432"          # 5433 on purpose: won't clash with a local Postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  pgadmin:
+      image: dpage/pgadmin4:latest
+      container_name: rag-pgadmin
+      environment:
+        PGADMIN_DEFAULT_EMAIL: admin@admin.com
+        PGADMIN_DEFAULT_PASSWORD: admin
+      ports:
+        - "5050:80"
+      depends_on:
+        - db
+
+volumes:
+  pgdata:

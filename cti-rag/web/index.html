@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rag</title>
+<style>
+  :root {
+    --bg:#0f1115; --panel:#171a21; --line:#262b35; --ink:#e6e8ec;
+    --dim:#8b93a1; --accent:#7aa2f7; --warn:#e0af68; --ok:#9ece6a;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:15px/1.55 system-ui, -apple-system, sans-serif }
+  .wrap { max-width:1000px; margin:0 auto; padding:32px 20px 80px }
+  h1 { font-size:20px; margin:0 0 4px }
+  .sub { color:var(--dim); font-size:13px; margin-bottom:24px }
+  .askbar { display:flex; gap:8px; margin-bottom:8px }
+  input[type=text] { flex:1; background:var(--panel); border:1px solid var(--line);
+    color:var(--ink); padding:12px 14px; border-radius:8px; font-size:15px }
+  input[type=text]:focus { outline:none; border-color:var(--accent) }
+  button { background:var(--accent); color:#0f1115; border:0; padding:12px 20px;
+    border-radius:8px; font-weight:600; cursor:pointer; font-size:15px }
+  button:disabled { opacity:.5; cursor:default }
+  .opts { color:var(--dim); font-size:13px; margin-bottom:28px; display:flex;
+    gap:16px; align-items:center }
+  .opts input[type=number] { width:56px; background:var(--panel);
+    border:1px solid var(--line); color:var(--ink); border-radius:6px; padding:4px 6px }
+  h2 { font-size:12px; text-transform:uppercase; letter-spacing:.09em;
+       color:var(--dim); margin:32px 0 12px }
+  .step { display:flex; gap:12px; align-items:baseline; padding:9px 12px;
+    border-left:2px solid var(--accent); background:var(--panel);
+    margin-bottom:6px; border-radius:0 6px 6px 0 }
+  .step .name { font-family:var(--mono); font-size:13px; color:var(--accent) }
+  .step .detail { color:var(--dim); font-size:13px; flex:1 }
+  .step .ms { font-family:var(--mono); font-size:12px; color:var(--dim) }
+  .card { background:var(--panel); border:1px solid var(--line);
+    border-radius:8px; padding:14px 16px; margin-bottom:10px }
+  .card .head { display:flex; justify-content:space-between; gap:12px;
+    align-items:baseline; margin-bottom:6px }
+  .card .sid { font-family:var(--mono); color:var(--warn); font-size:13px }
+  .card .title { font-weight:600; font-size:14px; flex:1 }
+  .card .score { font-family:var(--mono); font-size:12px; color:var(--dim) }
+  .card .did { font-family:var(--mono); font-size:12px; color:var(--dim);
+    margin-bottom:8px; word-break:break-all }
+  .card .body { font-size:13.5px; color:#c3c8d2; white-space:pre-wrap;
+    max-height:110px; overflow:hidden; cursor:pointer }
+  .card .body.open { max-height:none }
+  .answer { background:var(--panel); border:1px solid var(--line);
+    border-left:3px solid var(--ok); border-radius:8px; padding:18px 20px;
+    white-space:pre-wrap }
+  .cite { color:var(--warn); font-family:var(--mono); font-size:13px }
+  .err { color:#f7768e; font-family:var(--mono); font-size:13px }
+  .muted { color:var(--dim); font-size:13px }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>rag</h1>
+  <div class="sub">Ask a question. See the steps, the evidence, then the answer.</div>
+
+  <div class="askbar">
+    <input type="text" id="q" placeholder="What is T1486?" autofocus>
+    <button id="go">Ask</button>
+  </div>
+  <div class="opts">
+    <label>top-k <input type="number" id="k" value="6" min="1" max="30"></label>
+    <label><input type="checkbox" id="gen" checked> generate answer</label>
+    <span class="muted">click an evidence card to expand it</span>
+  </div>
+
+  <div id="out"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => (s ?? "").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const citeify = s => esc(s).replace(/\[S(\d+)\]/g, '<span class="cite">[S$1]</span>');
+
+async function ask() {
+  const question = $("#q").value.trim();
+  if (!question) return;
+  $("#go").disabled = true;
+  $("#out").innerHTML = '<div class="muted">running…</div>';
+  try {
+    const r = await fetch("/api/ask", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({question, k: +$("#k").value, answer: $("#gen").checked})
+    });
+    if (!r.ok) throw new Error(await r.text());
+    render(await r.json());
+  } catch (e) {
+    $("#out").innerHTML = '<div class="err">' + esc(String(e)) + '</div>';
+  } finally {
+    $("#go").disabled = false;
+  }
+}
+
+function render(t) {
+  const steps = t.steps.map(s => `
+    <div class="step">
+      <span class="name">${esc(s.name)}</span>
+      <span class="detail">${esc(s.detail)}</span>
+      <span class="ms">${s.ms} ms</span>
+    </div>`).join("");
+
+  const ev = t.evidence.map((e, i) => `
+    <div class="card">
+      <div class="head">
+        <span class="sid">[S${i + 1}]</span>
+        <span class="title">${esc(e.title)}</span>
+        <span class="score">${e.score}</span>
+      </div>
+      <div class="did">${esc(e.chunk_id)}</div>
+      <div class="body" onclick="this.classList.toggle('open')">${esc(e.text)}</div>
+    </div>`).join("");
+
+  $("#out").innerHTML = `
+    <h2>Steps · ${t.total_ms} ms</h2>${steps}
+    <h2>Evidence · ${t.evidence.length} chunks</h2>${ev || '<div class="muted">nothing retrieved</div>'}
+    <h2>Answer</h2>
+    <div class="answer">${citeify(t.answer)}</div>`;
+}
+
+$("#go").onclick = ask;
+$("#q").addEventListener("keydown", e => { if (e.key === "Enter") ask(); });
+</script>
+</body>
+</html>

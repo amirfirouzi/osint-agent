@@ -1,0 +1,30 @@
+{
+  "attack": {
+    "chars": 2210373,
+    "content_digest": "34bc119c0d70d652",
+    "documents": 5501,
+    "fetched_at": "2026-08-10T19:34:11+00:00",
+    "note": "MITRE ATT&CK Enterprise (techniques/groups/procedures)"
+  },
+  "cisa": {
+    "chars": 1078526,
+    "content_digest": "ac1cbd908e6343a1",
+    "documents": 30,
+    "fetched_at": "2026-08-10T20:13:03+00:00",
+    "note": "CISA advisories, 0 skipped"
+  },
+  "kev": {
+    "chars": 886007,
+    "content_digest": "3757ffe67a28df38",
+    "documents": 1662,
+    "fetched_at": "2026-08-10T19:34:37+00:00",
+    "note": "CISA KEV catalogue v2026.08.10"
+  },
+  "report": {
+    "chars": 0,
+    "content_digest": "e3b0c44298fc1c14",
+    "documents": 0,
+    "fetched_at": "2026-08-10T19:35:26+00:00",
+    "note": "no PDFs dropped yet"
+  }
+}

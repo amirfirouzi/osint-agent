@@ -1,0 +1,106 @@
+# Your answer key. Add to it every time you find a failure.
+#
+# relevant_doc_ids = the doc_ids a correct answer must be built from.
+# Leave it empty and the question is skipped by 04_eval.py — that's fine,
+# label as you go.
+#
+# types:
+#   exact_id     identifier lookup      -> dense retrieval's blind spot
+#   paraphrase   same meaning, no IDs   -> keyword search's blind spot
+#   multi_hop    needs two documents joined
+#   unanswerable corpus does NOT contain it; correct behaviour is refusal
+
+- id: q01
+  question: What is T1486 and which tactic does it belong to?
+  type: exact_id
+  relevant_doc_ids: [attack:T1486]
+
+- id: q02
+  question: What is T1566.002 and how does it differ from T1566.001?
+  type: exact_id
+  relevant_doc_ids: [attack:T1566.002, attack:T1566.001]
+
+- id: q03
+  question: Which tactic does T1547.001 belong to and what does it abuse?
+  type: exact_id
+  relevant_doc_ids: [attack:T1547.001]
+
+- id: q04
+  question: Is CVE-2021-44228 in the CISA KEV catalog, and what is the required action?
+  type: exact_id
+  relevant_doc_ids: [kev:CVE-2021-44228]
+
+- id: q05
+  question: What are the common ways an intruder first gets into a corporate network through email?
+  type: paraphrase
+  relevant_doc_ids: [attack:T1566, attack:T1566.001, attack:T1566.002]
+  # "phishing" never appears in the question — that's the test
+
+- id: q06
+  question: How do attackers keep access to a machine after it reboots?
+  type: paraphrase
+  relevant_doc_ids:
+    - attack:T1547.001    # Registry Run Keys / Startup Folder
+    - attack:T1543.003    # Windows Service
+    - attack:T1053.005    # Scheduled Task
+    - attack:T1037        # Boot or Logon Initialization Scripts
+    - attack:T1543.002    # Systemd Service
+    - attack:T1542        # Pre-OS Boot
+  # dozens of techniques are valid; this key is a curated sample, so recall
+  # reads pessimistically. Compare systems against each other, not against 1.0.
+
+- id: q07
+  question: An attacker is stealing passwords users saved in plain text on disk. What is that called?
+  type: paraphrase
+  relevant_doc_ids: [attack:T1552.001]
+
+- id: q08
+  question: Midnight Blizzard is reported in our environment. What initial access methods should we hunt for?
+  type: multi_hop
+  relevant_doc_ids:
+    - attack:G0016
+    - attack:P:G0016:T1566.001
+    - attack:P:G0016:T1566.002
+    - attack:P:G0016:T1078
+    - attack:P:G0016:T1133
+    - attack:P:G0016:T1190
+    - attack:P:G0016:T1199
+  # "Midnight Blizzard" appears ONLY in the group doc; the behaviour lives in
+  # procedure docs that only ever say "APT29". No lexical bridge exists.
+  # This is the question that stays broken until Phase 4 query rewriting.
+
+- id: q09
+  question: Do Cozy Bear and the Dukes refer to the same threat actor, and what do they have in common with UNC2452?
+  type: multi_hop
+  relevant_doc_ids: [attack:G0016]
+
+- id: q10
+  question: What indicators of compromise are listed in the appendix of the vendor report?
+  type: paraphrase
+  relevant_doc_ids: []
+  # label this against one of YOUR pdfs. Aim it at an IOC table — it should FAIL
+  # now and recover in Phase 2 when parsing improves. That contrast is the point.
+
+# --- unanswerable: correct behaviour is refusal, not a confident guess ------
+- id: q11
+  question: What is the CVSS v3.1 base score of CVE-2024-3400?
+  type: unanswerable
+  relevant_doc_ids: []
+  # KEV records carry no CVSS score. The model knows CVSS scores from training
+  # and will happily produce one. That's the hallucination you're measuring.
+
+- id: q12
+  question: Which IP addresses is Lazarus Group using for command and control right now?
+  type: unanswerable
+  relevant_doc_ids: []
+
+- id: q13
+  question: What is APT29's next planned campaign?
+  type: unanswerable
+  relevant_doc_ids: []
+
+- id: q14
+  question: How many customers of Fortinet were breached last quarter?
+  type: unanswerable
+  relevant_doc_ids: []
+  # plausible-sounding, precise-sounding, and absent — the worst combination
